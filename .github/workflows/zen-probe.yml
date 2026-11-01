@@ -1,26 +1,18 @@
 name: zen-probe
 on:
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch: {}
-permissions:
-  contents: write
 jobs:
   probe:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
       - name: probe
         run: |
-          {
-            echo "## $(date -u +%FT%TZ)"
-            echo -n "GET health: "
-            curl -sS -m 20 -o /dev/null -w "%{http_code} %{time_total}s\n" https://obscure-giggle-xj9qgrx57rrc6wgv-8787.app.github.dev/health || echo FAIL
-            echo -n "POST chat: "
-            curl -sS -m 60 -X POST https://obscure-giggle-xj9qgrx57rrc6wgv-8787.app.github.dev/v1/chat/completions -H 'Content-Type: application/json' -d '{"model":"nemotron-3.5-lightning-free","messages":[{"role":"user","content":"1+1=? digits only"}],"max_tokens":8}' -w "\nHTTP=%{http_code} time=%{time_total}s\n" || echo FAIL
-            echo ""
-          } >> probe.log
-      - name: commit
-        run: |
-          git config user.name "probe-bot" && git config user.email "bot@users.noreply.github.com"
-          git add probe.log && git commit -m "probe $(date -u +%FT%TZ)" && git push || echo "nothing to commit"
+          echo "## $(date -u +%FT%TZ)"
+          echo -n "GET health: "
+          curl -sS -m 20 -o /dev/null -w "%{http_code} %{time_total}s\n" https://obscure-giggle-xj9qgrx57rrc6wgv-8787.app.github.dev/health || echo FAIL
+          echo -n "GET models: "
+          curl -sS -m 20 -o /dev/null -w "%{http_code} %{time_total}s\n" https://obscure-giggle-xj9qgrx57rrc6wgv-8787.app.github.dev/v1/models || echo FAIL
+          echo -n "POST chat: "
+          curl -sS -m 60 -X POST https://obscure-giggle-xj9qgrx57rrc6wgv-8787.app.github.dev/v1/chat/completions -H 'Content-Type: application/json' -d '{"model":"nemotron-3.5-lightning-free","messages":[{"role":"user","content":"1+1=? digits only"}],"max_tokens":8}' -w "\nHTTP=%{http_code} time=%{time_total}s\n" || echo FAIL
