@@ -2,6 +2,7 @@ name: zen-probe
 on:
   schedule:
     - cron: '*/5 * * * *'
+    - cron: '5 0 * * *'
   workflow_dispatch: {}
 jobs:
   probe:
@@ -9,10 +10,10 @@ jobs:
     steps:
       - name: probe
         run: |
-          echo "## $(date -u +%FT%TZ)"
+          echo "## $(date -u +%FT%TZ) cron=${{ github.event.schedule }}"
           echo -n "GET health: "
           curl -sS -m 20 -o /dev/null -w "%{http_code} %{time_total}s\n" https://obscure-giggle-xj9qgrx57rrc6wgv-8787.app.github.dev/health || echo FAIL
-          echo -n "GET models: "
-          curl -sS -m 20 -o /dev/null -w "%{http_code} %{time_total}s\n" https://obscure-giggle-xj9qgrx57rrc6wgv-8787.app.github.dev/v1/models || echo FAIL
-          echo -n "POST chat: "
-          curl -sS -m 60 -X POST https://obscure-giggle-xj9qgrx57rrc6wgv-8787.app.github.dev/v1/chat/completions -H 'Content-Type: application/json' -d '{"model":"nemotron-3.5-lightning-free","messages":[{"role":"user","content":"1+1=? digits only"}],"max_tokens":8}' -w "\nHTTP=%{http_code} time=%{time_total}s\n" || echo FAIL
+          if [ "${{ github.event.schedule }}" = "5 0 * * *" ]; then
+            echo -n "POST chat (daily reset check): "
+            curl -sS -m 45 -X POST https://obscure-giggle-xj9qgrx57rrc6wgv-8787.app.github.dev/v1/chat/completions -H 'Content-Type: application/json' -d '{"model":"nemotron-3.5-lightning-free","messages":[{"role":"user","content":"1+1=? digits only"}],"max_tokens":8}' -w "\nHTTP=%{http_code} time=%{time_total}s\n" || echo FAIL
+          fi
