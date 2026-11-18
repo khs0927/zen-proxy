@@ -237,13 +237,13 @@ describe("windows launcher (powershell)", { skip: !isWindows && "powershell laun
   // the assertion was matching against an empty string. The missing-install
   // message is covered by the static assertion on the script's source instead.
   function stageWin(port) {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "zen-claude-win-"))
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "zen-claude win-"))
     for (const sub of ["bin", "claude"]) fs.mkdirSync(path.join(dir, sub), { recursive: true })
     fs.copyFileSync(PS1, path.join(dir, "bin", "claude-zen.ps1"))
     fs.copyFileSync(MAKER, path.join(dir, "bin", "make-settings.mjs"))
     fs.copyFileSync(SETTINGS, path.join(dir, "claude", "zen-proxy.settings.json"))
     for (const f of ["zen-proxy.mjs", "models.json", "agent-tools.json"]) fs.copyFileSync(path.join(REPO, f), path.join(dir, f))
-    fs.writeFileSync(path.join(dir, "zen-proxy.json"), JSON.stringify({ port }))
+    fs.writeFileSync(path.join(dir, "zen-proxy.json"), JSON.stringify({ port, autoSync: false, autoUA: false }))
     fs.writeFileSync(path.join(dir, "bin", "claude.cmd"), "@echo off\r\necho FAKE-CLAUDE-OK\r\n")
     return dir
   }

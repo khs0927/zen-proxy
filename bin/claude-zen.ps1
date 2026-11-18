@@ -59,7 +59,7 @@ $log = $null
 if (-not (Test-ZenProxy)) {
     [Console]::Error.WriteLine("zen-claude: starting zen-proxy on port $port ...")
     $log = Join-Path $env:TEMP ("zen-proxy." + [guid]::NewGuid().ToString() + ".log")
-    $proc = Start-Process -FilePath "node" -ArgumentList $main -PassThru -NoNewWindow `
+    $proc = Start-Process -FilePath "node" -ArgumentList ('"{0}"' -f $main) -PassThru -NoNewWindow `
         -RedirectStandardOutput $log -RedirectStandardError "$log.err"
     $ok = $false
     for ($i = 0; $i -lt 40; $i++) {
@@ -80,7 +80,9 @@ if (-not (Test-ZenProxy)) {
     # watcher knows Claude Code is still going.
     $runFlag = Join-Path $env:TEMP ("zen-claude-run." + [guid]::NewGuid().ToString() + ".flag")
     Set-Content -Path $runFlag -Value "1"
-    $watcher = Start-ThreadJob -ScriptBlock {
+    # ThreadJob is not installed by default on Windows PowerShell 5.1.
+    $jobCommand = if (Get-Command Start-ThreadJob -ErrorAction SilentlyContinue) { 'Start-ThreadJob' } else { 'Start-Job' }
+    $watcher = & $jobCommand -ScriptBlock {
         param($Main, $Port, $Log, $RunFlag)
         $restarts = 0
         while (Test-Path $RunFlag) {
@@ -94,7 +96,7 @@ if (-not (Test-ZenProxy)) {
                 break
             }
             [Console]::Error.WriteLine("zen-claude: zen-proxy stopped, restarting ($restarts/10)...")
-            Start-Process -FilePath "node" -ArgumentList $Main -NoNewWindow `
+            Start-Process -FilePath "node" -ArgumentList ('"{0}"' -f $Main) -NoNewWindow `
                 -RedirectStandardOutput $Log -RedirectStandardError "$Log.err" | Out-Null
             for ($i = 0; $i -lt 40; $i++) {
                 try { $r = Invoke-WebRequest -Uri "http://127.0.0.1:$Port/health" -TimeoutSec 2 -UseBasicParsing; break } catch { }

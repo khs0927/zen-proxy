@@ -2389,12 +2389,11 @@ describe("stream timeout", () => {
         opts.signal?.addEventListener("abort", () => reject(opts.signal.reason), { once: true })
       })
     }
-    zp.saveConfig({ timeoutMs: 50 })
+    zp.saveConfig({ timeoutMs: 50, fallbackModels: [m], retriesPerModel: 0 })
     const req = mockReq({ _body: JSON.stringify({ model: m, messages: [], stream: true }) })
     const res = mockRes()
-    await zp.handleChat(req, res)
     await Promise.race([
-      res.done,
+      zp.handleChat(req, res).then(() => res.done),
       new Promise((_, rej) => setTimeout(() => rej(new Error("stream did not close within 3s")), 3000)),
     ])
     assert.equal(res.state.status, 502)
